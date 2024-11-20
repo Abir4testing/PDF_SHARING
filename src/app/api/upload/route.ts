@@ -6,11 +6,8 @@ import bcrypt from 'bcryptjs';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
