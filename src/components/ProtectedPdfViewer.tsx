@@ -1,12 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
-
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+import { motion, useDragControls } from 'framer-motion';
+import { Lock, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, GripHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ProtectedPdfViewerProps {
   pdfUrl: string;
@@ -16,129 +13,113 @@ interface ProtectedPdfViewerProps {
 const ProtectedPdfViewer: React.FC<ProtectedPdfViewerProps> = ({ pdfUrl, password: initialPassword }) => {
   const [password, setPassword] = useState(initialPassword || '');
   const [isPasswordCorrect, setIsPasswordCorrect] = useState(false);
-  const [numPages, setNumPages] = useState<number | null>(null);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.0);
   const [error, setError] = useState<string | null>(null);
+  const dragControls = useDragControls();
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-    setIsPasswordCorrect(true);
-    setError(null);
-  };
-
-  const onDocumentLoadError = (err: Error) => {
-    if (err.message.includes('password')) {
-      setIsPasswordCorrect(false);
-      setError('Incorrect password. Please try again.');
-    } else {
-      setError('Error loading PDF. Please try again.');
-    }
-  };
-
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsPasswordCorrect(false);
-    // This will trigger a re-render and attempt to load the PDF with the new password
-  };
+    if (!password.trim()) return;
 
-  const nextPage = () => {
-    if (pageNumber < (numPages || 1)) {
-      setPageNumber(pageNumber + 1);
+    try {
+      const url = new URL(pdfUrl, window.location.origin);
+      url.searchParams.set('password', password);
+      
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Invalid password');
+      }
+
+      setIsPasswordCorrect(true);
+      setError(null);
+    } catch (error) {
+      console.error('Password error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to verify password');
+      setIsPasswordCorrect(false);
     }
-  };
-
-  const previousPage = () => {
-    if (pageNumber > 1) {
-      setPageNumber(pageNumber - 1);
-    }
-  };
-
-  const zoomIn = () => {
-    setScale(prevScale => Math.min(prevScale + 0.2, 3));
-  };
-
-  const zoomOut = () => {
-    setScale(prevScale => Math.max(prevScale - 0.2, 0.5));
   };
 
   if (!isPasswordCorrect) {
     return (
-      <div className="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Protected PDF</h2>
-        <p className="mb-4">This PDF is password protected. Please enter the password to view.</p>
-        <form onSubmit={handlePasswordSubmit} className="w-full max-w-sm">
-          <div className="flex flex-col gap-4">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter password"
-            />
-            <button
-              type="submit"
-              className="w-full px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Submit
-            </button>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        drag
+        dragControls={dragControls}
+        dragMomentum={false}
+        dragElastic={0.1}
+        whileDrag={{ scale: 1.02 }}
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90vw] max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl"
+      >
+        <div className="p-6">
+          <div 
+            className="absolute left-0 top-0 w-full h-10 flex items-center justify-center px-4 cursor-move bg-gray-50 dark:bg-gray-700 rounded-t-2xl"
+            onPointerDown={(e) => dragControls.start(e)}
+          >
+            <GripHorizontal className="w-5 h-5 text-gray-400" />
           </div>
-        </form>
-        {error && <p className="mt-4 text-red-500">{error}</p>}
-      </div>
+
+          <div className="flex flex-col items-center space-y-4 mt-8">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <Lock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white text-center">
+              Protected PDF
+            </h3>
+
+            <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+              This PDF is password protected. Please enter the password to view.
+            </p>
+
+            <form onSubmit={handlePasswordSubmit} className="w-full space-y-4">
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Enter password"
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+              >
+                View PDF
+              </Button>
+            </form>
+
+            {error && (
+              <p className="text-sm text-red-500 dark:text-red-400">
+                {error}
+              </p>
+            )}
+          </div>
+        </div>
+      </motion.div>
     );
   }
 
+  // When password is correct, open the PDF in a new tab
+  const url = new URL(pdfUrl, window.location.origin);
+  url.searchParams.set('password', password);
+  
   return (
-    <div className="flex flex-col items-center p-4">
-      <div className="flex gap-4 mb-4">
-        <button
-          onClick={previousPage}
-          disabled={pageNumber <= 1}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-gray-300"
-        >
-          Previous
-        </button>
-        <span className="flex items-center">
-          Page {pageNumber} of {numPages}
-        </span>
-        <button
-          onClick={nextPage}
-          disabled={pageNumber >= (numPages || 1)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-gray-300"
-        >
-          Next
-        </button>
-        <button
-          onClick={zoomOut}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md"
-        >
-          Zoom Out
-        </button>
-        <button
-          onClick={zoomIn}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md"
-        >
-          Zoom In
-        </button>
-      </div>
-      <div className="border rounded-lg p-4 bg-gray-100">
-        <Document
-          file={{
-            url: pdfUrl,
-            password,
-          }}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={onDocumentLoadError}
-        >
-          <Page
-            pageNumber={pageNumber}
-            scale={scale}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
-          />
-        </Document>
-      </div>
+    <div className="w-full h-full flex items-center justify-center">
+      <iframe
+        src={url.toString()}
+        className="w-full h-[calc(100vh-200px)] rounded-lg border border-gray-200 dark:border-gray-700"
+        title="PDF Viewer"
+      />
     </div>
   );
 };
