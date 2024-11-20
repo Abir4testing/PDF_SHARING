@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { QRDialog } from '@/components/ui/qr-dialog';
 import toast, { Toaster } from 'react-hot-toast';
 
+interface UploadedFileInfo {
+  url: string;
+  filename: string;
+  isProtected: boolean;
+  password?: string;
+}
+
 export default function UploadPage() {
   const [username, setUsername] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -14,7 +21,7 @@ export default function UploadPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
-  const [uploadedFileInfo, setUploadedFileInfo] = useState<{ url: string; filename: string; isProtected: boolean; password: string } | null>(null);
+  const [uploadedFileInfo, setUploadedFileInfo] = useState<UploadedFileInfo | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [password, setPassword] = useState('');
 
