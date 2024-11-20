@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the PDF record
-    const pdf = await prisma.pDF.findUnique({
+    const pdf = await prisma.pdfFile.findUnique({
       where: { id: fileId }
     });
 
