@@ -48,14 +48,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Read the file
-    const filePath = path.join(process.cwd(), 'public', pdf.path);
+    const filePath = path.join(process.cwd(), 'uploads', pdf.filename);
     try {
       const fileBuffer = await fs.readFile(filePath);
       
       // Set appropriate headers for PDF file
       const headers = new Headers();
       headers.set('Content-Type', 'application/pdf');
-      headers.set('Content-Disposition', `attachment; filename="${pdf.title}"`);
+      headers.set('Content-Disposition', `attachment; filename="${pdf.filename}"`);
 
       return new NextResponse(fileBuffer, {
         status: 200,
