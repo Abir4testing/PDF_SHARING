@@ -13,6 +13,7 @@ interface PDFFile {
   username: string;
   isProtected: boolean;
   url: string;
+  uploadedAt: string;
 }
 
 export default function SearchPage() {
@@ -181,13 +182,21 @@ export default function SearchPage() {
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           Shared by: {file.username}
                         </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Uploaded: {new Date(file.uploadedAt).toLocaleString()}
+                        </p>
                       </div>
                     </div>
-                    {file.isProtected ? (
-                      <Lock className="w-5 h-5 text-yellow-500" />
-                    ) : (
-                      <Download className="w-5 h-5 text-blue-500" />
-                    )}
+                    <div className="flex items-center space-x-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mr-2">
+                        {file.isProtected ? 'Protected' : 'Public'}
+                      </p>
+                      {file.isProtected ? (
+                        <Lock className="w-5 h-5 text-yellow-500" />
+                      ) : (
+                        <Download className="w-5 h-5 text-blue-500" />
+                      )}
+                    </div>
                   </motion.div>
                 ))}
               </div>

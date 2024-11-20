@@ -21,8 +21,9 @@ export async function GET(request: NextRequest) {
         filename: true,
         isProtected: true,
         username: true,
+        createdAt: true,
       },
-      orderBy: { id: 'desc' }
+      orderBy: { createdAt: 'desc' } // Order by upload date
     });
 
     if (pdfs.length === 0) {
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
       username: pdf.username,
       isProtected: pdf.isProtected,
       url: `/api/pdf/${pdf.username}/${pdf.filename}`,
+      uploadedAt: pdf.createdAt.toISOString(),
     }));
 
     return NextResponse.json({
